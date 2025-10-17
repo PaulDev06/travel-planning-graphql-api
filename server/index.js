@@ -25,11 +25,6 @@ const Query = new GraphQLObjectType({
  
 const schema = new GraphQLSchema({ query: Query });
  
-const root = {
-  hello() {
-    return "Hello world!";
-  },
-};
  
 const app = express();
  
@@ -37,7 +32,6 @@ app.all(
   "/graphql",
   createHandler({
     schema,
-    rootValue: root,
   })
 );
 
