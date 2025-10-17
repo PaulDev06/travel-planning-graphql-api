@@ -1,12 +1,19 @@
 import express from "express";
 import { createHandler } from "graphql-http/lib/use/express";
-import { buildSchema } from "graphql";
- 
-const schema = buildSchema(`
-  type Query {
-    hello: String
+import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
+import { ruruHTML } from "ruru/server";
+
+const Query = new GraphQLObjectType({
+  name: 'Query',
+  fields: {
+    hello: {
+      type: GraphQLString,
+      resolve: () => 'Hello, GraphQL with Express!'
+    }
   }
-`);
+});
+ 
+const schema = new GraphQLSchema({ query: Query });
  
 const root = {
   hello() {
@@ -23,7 +30,15 @@ app.all(
     rootValue: root,
   })
 );
+
+app.get("/", (_req, res) => {
+  res.type("html");
+  res.end(ruruHTML({ endpoint: "/graphql" }));
+});
+
+const PORT = 4000;
  
 app.listen(4000, () => {
-  console.log("Running a GraphQL API server at http://localhost:4000/graphql");
+    console.log(`Server running on http://localhost:${PORT}/graphql`);
+    console.log(`GraphiQL IDE available at http://localhost:${PORT}/`);
 });
