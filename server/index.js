@@ -1,14 +1,24 @@
 import express from "express";
 import { createHandler } from "graphql-http/lib/use/express";
-import { GraphQLSchema, GraphQLObjectType, GraphQLString } from 'graphql';
+import { GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLList, GraphQLNonNull, GraphQLInt } from 'graphql';
 import { ruruHTML } from "ruru/server";
+import { CityType, cities } from "./types/index.js";
 
 const Query = new GraphQLObjectType({
   name: 'Query',
   fields: {
-    hello: {
-      type: GraphQLString,
-      resolve: () => 'Hello, GraphQL with Express!'
+    city: {
+      type: CityType,
+      args : {
+        id : { type: new GraphQLNonNull(GraphQLInt)}
+      },
+      resolve: (parent, args) => {
+        return cities.find(city => city.id === args.id);
+      }
+    },
+    cities: {
+      type: new GraphQLList(CityType),
+      resolve: () => cities
     }
   }
 });
