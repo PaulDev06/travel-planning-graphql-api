@@ -1,155 +1,89 @@
-import { 
-  ActivityRankingService, 
-  ActivityRanking, 
-  ActivityType, 
-  DailyForecast,
-  WeatherCode 
-} from '../types/models.js';
+import { ActivityRanking, DailyForecast } from '../types/models.js';
 
-type WeatherConditions = {
-  avgTemp: number;
-  avgPrecipitation: number;
-  hasSnow: boolean;
-  clearDays: number;
-  totalDays: number;
-}
-
-export class WeatherBasedActivityRankingService implements ActivityRankingService {
-  
-  rankActivities(forecasts: DailyForecast[]): ActivityRanking[] {
-    if (!forecasts || forecasts.length === 0) {
-      return this.getDefaultRankings();
-    }
-
-    const conditions = this.analyzeWeatherConditions(forecasts);
-    
+export function rankActivities(forecasts: DailyForecast[]): ActivityRanking[] {
+  if (!forecasts.length) {
     return [
-      this.rankSkiing(conditions),
-      this.rankSurfing(conditions),
-      this.rankIndoorSightseeing(conditions),
-      this.rankOutdoorSightseeing(conditions)
-    ].sort((a, b) => b.score - a.score);
+      { activity: 'SKIING', score: 50 },
+      { activity: 'SURFING', score: 50 },
+      { activity: 'INDOOR_SIGHTSEEING', score: 50 },
+      { activity: 'OUTDOOR_SIGHTSEEING', score: 50 }
+    ];
   }
 
-  private analyzeWeatherConditions(forecasts: DailyForecast[]): WeatherConditions {
-    const totalDays = forecasts.length;
-    const avgTemp = forecasts.reduce((sum, f) => sum + (f.temperatureMax + f.temperatureMin) / 2, 0) / totalDays;
-    const avgPrecipitation = forecasts.reduce((sum, f) => sum + f.precipitation, 0) / totalDays;
-    const hasSnow = forecasts.some(f => this.isSnowWeather(f.weatherCode));
-    const clearDays = forecasts.filter(f => this.isClearWeather(f.weatherCode)).length;
+  const avgTemp = forecasts.reduce((sum, f) => 
+    sum + (f.temperatureMax + f.temperatureMin) / 2, 0) / forecasts.length;
+  
+  const avgPrecip = forecasts.reduce((sum, f) => 
+    sum + f.precipitation, 0) / forecasts.length;
+  
+  const hasSnow = forecasts.some(f => f.weatherCode >= 71 && f.weatherCode <= 77);
+  
+  const clearDays = forecasts.filter(f => f.weatherCode <= 2).length;
+  const clearRatio = clearDays / forecasts.length;
 
-    return { avgTemp, avgPrecipitation, hasSnow, clearDays, totalDays };
-  }
+  const rankings = [
+    { activity: 'SKIING', score: calculateSkiingScore(avgTemp, avgPrecip, hasSnow) },
+    { activity: 'SURFING', score: calculateSurfingScore(avgTemp, avgPrecip, clearRatio) },
+    { activity: 'INDOOR_SIGHTSEEING', score: calculateIndoorScore(avgTemp, avgPrecip) },
+    { activity: 'OUTDOOR_SIGHTSEEING', score: calculateOutdoorScore(avgTemp, avgPrecip, clearRatio) }
+  ];
 
-  private rankSkiing(conditions: WeatherConditions): ActivityRanking {
-    let score = 0;
-
-    // Cold temperature is essential
-    if (conditions.avgTemp < -5) score += 40;
-    else if (conditions.avgTemp < 0) score += 30;
-    else if (conditions.avgTemp < 5) score += 15;
-    else score += 0;
-
-    // Snow presence is critical
-    if (conditions.hasSnow) score += 40;
-
-    // Some precipitation is good for fresh snow
-    if (conditions.avgPrecipitation > 5 && conditions.avgPrecipitation < 20) score += 20;
-    else if (conditions.avgPrecipitation >= 20) score += 10;
-
-    return {
-      activity: ActivityType.SKIING,
-      score: Math.min(100, score),
-      suitability: this.getSuitability(score)
-    };
-  }
-
-  private rankSurfing(conditions: WeatherConditions): ActivityRanking {
-    let score = 0;
-
-    // Moderate to warm temperature
-    if (conditions.avgTemp >= 18 && conditions.avgTemp <= 28) score += 40;
-    else if (conditions.avgTemp >= 15 && conditions.avgTemp < 18) score += 30;
-    else if (conditions.avgTemp >= 12) score += 15;
-
-    // Clear weather is preferred
-    const clearRatio = conditions.clearDays / conditions.totalDays;
-    score += clearRatio * 30;
-
-    // Light precipitation is okay
-    if (conditions.avgPrecipitation < 5) score += 30;
-    else if (conditions.avgPrecipitation < 10) score += 15;
-
-    return {
-      activity: ActivityType.SURFING,
-      score: Math.min(100, score),
-      suitability: this.getSuitability(score)
-    };
-  }
-
-  private rankIndoorSightseeing(conditions: WeatherConditions): ActivityRanking {
-    let score = 50; // Base score - always viable
-
-    // Better when weather is bad outside
-    if (conditions.avgPrecipitation > 10) score += 25;
-    else if (conditions.avgPrecipitation > 5) score += 15;
-
-    // Extreme temperatures make indoor better
-    if (conditions.avgTemp < 0 || conditions.avgTemp > 32) score += 25;
-    else if (conditions.avgTemp < 5 || conditions.avgTemp > 28) score += 10;
-
-    return {
-      activity: ActivityType.INDOOR_SIGHTSEEING,
-      score: Math.min(100, score),
-      suitability: this.getSuitability(score)
-    };
-  }
-
-  private rankOutdoorSightseeing(conditions: WeatherConditions): ActivityRanking {
-    let score = 0;
-
-    // Pleasant temperature range
-    if (conditions.avgTemp >= 15 && conditions.avgTemp <= 25) score += 40;
-    else if (conditions.avgTemp >= 10 && conditions.avgTemp < 15) score += 25;
-    else if (conditions.avgTemp >= 8 && conditions.avgTemp < 28) score += 15;
-
-    // Clear days are important
-    const clearRatio = conditions.clearDays / conditions.totalDays;
-    score += clearRatio * 40;
-
-    // Low precipitation is preferred
-    if (conditions.avgPrecipitation < 2) score += 20;
-    else if (conditions.avgPrecipitation < 5) score += 10;
-
-    return {
-      activity: ActivityType.OUTDOOR_SIGHTSEEING,
-      score: Math.min(100, score),
-      suitability: this.getSuitability(score)
-    };
-  }
-
-  private isSnowWeather(code: WeatherCode): boolean {
-    return code >= 71 && code <= 77 || code === 85 || code === 86;
-  }
-
-  private isClearWeather(code: WeatherCode): boolean {
-    return code >= 0 && code <= 2;
-  }
-
-  private getSuitability(score: number): 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' {
-    if (score >= 75) return 'EXCELLENT';
-    if (score >= 55) return 'GOOD';
-    if (score >= 35) return 'FAIR';
-    return 'POOR';
-  }
-
-  private getDefaultRankings(): ActivityRanking[] {
-    return Object.values(ActivityType).map(activity => ({
-      activity,
-      score: 50,
-      suitability: 'FAIR' as const
-    }));
-  }
+  return rankings.sort((a, b) => b.score - a.score);
 }
 
-export const activityRankingService = new WeatherBasedActivityRankingService();
+function calculateSkiingScore(avgTemp: number, avgPrecip: number, hasSnow: boolean): number {
+  let score = 0;
+  
+  if (avgTemp < -5) score += 40;
+  else if (avgTemp < 0) score += 30;
+  else if (avgTemp < 5) score += 15;
+  
+  if (hasSnow) score += 40;
+  
+  if (avgPrecip > 5 && avgPrecip < 20) score += 20;
+  else if (avgPrecip >= 20) score += 10;
+  
+  return Math.min(100, score);
+}
+
+function calculateSurfingScore(avgTemp: number, avgPrecip: number, clearRatio: number): number {
+  let score = 0;
+  
+  if (avgTemp >= 18 && avgTemp <= 28) score += 40;
+  else if (avgTemp >= 15 && avgTemp < 18) score += 30;
+  else if (avgTemp >= 12) score += 15;
+  
+  score += clearRatio * 30;
+  
+  if (avgPrecip < 5) score += 30;
+  else if (avgPrecip < 10) score += 15;
+  
+  return Math.min(100, score);
+}
+
+function calculateIndoorScore(avgTemp: number, avgPrecip: number): number {
+  let score = 50;
+  
+  if (avgPrecip > 10) score += 25;
+  else if (avgPrecip > 5) score += 15;
+  
+  if (avgTemp < 0 || avgTemp > 32) score += 25;
+  else if (avgTemp < 5 || avgTemp > 28) score += 10;
+  
+  return Math.min(100, score);
+}
+
+function calculateOutdoorScore(avgTemp: number, avgPrecip: number, clearRatio: number): number {
+  let score = 0;
+  
+  if (avgTemp >= 15 && avgTemp <= 25) score += 40;
+  else if (avgTemp >= 10 && avgTemp < 15) score += 25;
+  else if (avgTemp >= 8 && avgTemp < 28) score += 15;
+  
+  score += clearRatio * 40;
+  
+  if (avgPrecip < 2) score += 20;
+  else if (avgPrecip < 5) score += 10;
+  
+  return Math.min(100, score);
+}

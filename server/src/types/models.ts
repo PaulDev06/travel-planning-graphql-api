@@ -51,17 +51,9 @@ export type DailyForecast = {
 }
 
 // Activity domain
-export enum ActivityType {
-  SKIING = 'SKIING',
-  SURFING = 'SURFING',
-  INDOOR_SIGHTSEEING = 'INDOOR_SIGHTSEEING',
-  OUTDOOR_SIGHTSEEING = 'OUTDOOR_SIGHTSEEING'
-}
-
 export type ActivityRanking = {
-  activity: ActivityType;
+  activity: string;
   score: number;
-  suitability: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
 }
 
 // Service interfaces
@@ -71,10 +63,6 @@ export type WeatherService = {
 
 export type GeoCodingService = {
   searchCities(query: string, limit?: number): Promise<GeoCity[]>;
-}
-
-export type ActivityRankingService = {
-  rankActivities(forecasts: DailyForecast[]): ActivityRanking[];
 }
 
 export class GeoCodingError extends Error {

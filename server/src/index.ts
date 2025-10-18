@@ -4,7 +4,7 @@ import { ruruHTML } from "ruru/server";
 import { schema } from './schema/index.js';
 import { geoCodingService } from './services/geocode.js';
 import { weatherService } from './services/weather.js';
-import { activityRankingService } from './services/activity.js';
+import { rankActivities } from './services/activity.js';
 
 const root = {
   searchCities: async ({ query, limit = 10 }: { query: string; limit?: number }) => {
@@ -26,7 +26,7 @@ const root = {
         activityRankings: async ({ days = 7 }) => {
           try {
             const forecasts = await weatherService.getWeatherForecast(city, days);
-            return activityRankingService.rankActivities(forecasts);
+            return rankActivities(forecasts);
           } catch (error) {
             console.error('Activity ranking error:', error);
             return [];
