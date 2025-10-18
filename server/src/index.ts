@@ -2,8 +2,6 @@ import express from "express";
 import { createHandler } from "graphql-http/lib/use/express";
 import { ruruHTML } from "ruru/server";
 import { schema } from './schema/index.js';
-// Uncomment the line below to use mock data (useful for network issues)
-// import { mockGeoCodingService as geoCodingService } from './services/geocode.js';
 import { geoCodingService } from './services/geocode.js';
 import { weatherService } from './services/weather.js';
 import { rankActivities } from './services/activity.js';
@@ -60,6 +58,5 @@ app.get("/", (_req, res) => {
 const PORT = 4000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}/graphql`);
     console.log(`GraphiQL IDE available at http://localhost:${PORT}/`);
 });

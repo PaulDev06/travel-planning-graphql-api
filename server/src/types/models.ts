@@ -1,4 +1,3 @@
-// Domain entities
 export type City = {
   id: number;
   name: string;
@@ -15,7 +14,6 @@ export type GeoCity = City & GeoLocation & {
   population?: number;
 }
 
-// Weather domain
 export type WeatherCode = 
   | 0   // Clear sky
   | 1   // Mainly clear
@@ -50,13 +48,11 @@ export type DailyForecast = {
   weatherCode: WeatherCode;
 }
 
-// Activity domain
 export type ActivityRanking = {
   activity: string;
   score: number;
 }
 
-// Service interfaces
 export type WeatherService = {
   getWeatherForecast(location: GeoLocation, days?: number): Promise<DailyForecast[]>;
 }
