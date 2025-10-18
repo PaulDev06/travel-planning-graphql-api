@@ -34,6 +34,38 @@ export const schema = buildSchema(`
   }
 
   """
+  Activity types available for ranking
+  """
+  enum ActivityType {
+    SKIING
+    SURFING
+    INDOOR_SIGHTSEEING
+    OUTDOOR_SIGHTSEEING
+  }
+
+  """
+  Suitability level for an activity
+  """
+  enum Suitability {
+    EXCELLENT
+    GOOD
+    FAIR
+    POOR
+  }
+
+  """
+  Ranking information for a specific activity based on weather conditions
+  """
+  type ActivityRanking {
+    """Type of activity"""
+    activity: ActivityType!
+    """Score from 0-100 indicating suitability"""
+    score: Float!
+    """Overall suitability rating"""
+    suitability: Suitability!
+  }
+
+  """
   City information with geographic coordinates
   """
   type GeoCity {
@@ -56,6 +88,11 @@ export const schema = buildSchema(`
     Defaults to 7 days if days parameter is not provided.
     """
     weatherForecast(days: Int = 7): [DailyForecast!]!
+    """
+    Activity rankings based on the weather forecast.
+    Returns activities ranked by suitability (best first).
+    """
+    activityRankings(days: Int = 7): [ActivityRanking!]!
   }
 
   type Query {
