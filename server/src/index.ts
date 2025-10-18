@@ -3,20 +3,30 @@ import { createHandler } from "graphql-http/lib/use/express";
 import { ruruHTML } from "ruru/server";
 import { schema } from './schema/index.js';
 import { geoCodingService } from './services/geocode.js';
-import { GeoCodingError } from './types/models.js';
+import { weatherService } from './services/weather.js';
+import { GeoCodingError, WeatherError } from './types/models.js';
 
-// Root resolver implementation
 const root = {
-  searchCities: async ({ query, limit }: { query: string; limit?: number }) => {
+  searchCities: async ({ query, limit = 10 }: { query: string; limit?: number }) => {
     try {
-      return await geoCodingService.searchCities(query, limit);
+      if (!query?.trim()) return [];
+      
+      const cities = await geoCodingService.searchCities(query, Math.min(Math.max(1, limit), 100));
+      
+      return cities.map(city => ({
+        ...city,
+        weatherForecast: async ({ days = 7 }) => {
+          try {
+            return await weatherService.getWeatherForecast(city, days);
+          } catch (error) {
+            console.error('Weather forecast error:', error);
+            return [];
+          }
+        }
+      }));
     } catch (error) {
-      if (error instanceof GeoCodingError) {
-        // Log error details but don't expose internal error messages
-        console.error('GeoCoding error:', error);
-        return [];
-      }
-      throw error; // Let unexpected errors be handled by GraphQL error handling
+      console.error('City search error:', error);
+      return [];
     }
   }
 };
