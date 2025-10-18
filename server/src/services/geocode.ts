@@ -11,36 +11,38 @@ type OpenMeteoResponse = {
 export class OpenMeteoGeoCodingService {
   private readonly baseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
 
-  async searchCities(query: string, limit: number = 10): Promise<GeoCity[]> {
-    if (!query.trim()) {
-      throw new GeoCodingError('Search query cannot be empty');
+  private async fetchWithRetry(url: string, retries = 2): Promise<any> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          timeout: 8000, // Increased timeout
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'TravelPlanner/1.0'
+          }
+        });
+        return response;
+      } catch (error) {
+        if (attempt === retries) throw error;
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+      }
     }
+    throw new Error('All retry attempts failed');
+  }
+
+  async searchCities(query: string, limit: number = 10): Promise<GeoCity[]> {
+    if (!query.trim()) return [];
 
     try {
       const url = new URL(this.baseUrl);
-      url.searchParams.append('name', query);
-      url.searchParams.append('count', limit.toString());
-      url.searchParams.append('language', 'en');
-      url.searchParams.append('format', 'json');
+      url.searchParams.set('name', query);
+      url.searchParams.set('count', limit.toString());
+      url.searchParams.set('language', 'en');
+      url.searchParams.set('format', 'json');
 
-      const response = await fetch(url.toString(), { timeout: 5000 });
-      
-      if (!response.ok) {
-        throw new GeoCodingError(
-          `OpenMeteo API request failed: ${response.statusText}`,
-          { status: response.status }
-        );
-      }
-
+      const response = await this.fetchWithRetry(url.toString());
       const data = await response.json() as OpenMeteoResponse;
-
-      if (data.error) {
-        throw new GeoCodingError(
-          `OpenMeteo API error: ${data.error.message}`,
-          data.error
-        );
-      }
-
       return data.results || [];
 
     } catch (error) {
