@@ -1,5 +1,4 @@
 import { WeatherService, DailyForecast, WeatherError, GeoLocation, WeatherCode } from '../types/models.js';
-import fetch from 'node-fetch';
 
 type OpenMeteoWeatherResponse = {
   daily?: {
@@ -42,7 +41,7 @@ export class OpenMeteoWeatherService implements WeatherService {
       url.searchParams.append('timezone', 'auto');
       url.searchParams.append('forecast_days', days.toString());
 
-      const response = await fetch(url.toString(), { timeout: 5000 });
+      const response = await fetch(url.toString());
 
       if (!response.ok) {
         throw new WeatherError(

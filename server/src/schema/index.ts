@@ -34,6 +34,16 @@ export const schema = buildSchema(`
   }
 
   """
+  Activity ranking based on weather conditions
+  """
+  type ActivityRanking {
+    """Activity name"""
+    activity: String!
+    """Suitability score (0-100, higher is better)"""
+    score: Float!
+  }
+
+  """
   City information with geographic coordinates
   """
   type GeoCity {
@@ -56,6 +66,11 @@ export const schema = buildSchema(`
     Defaults to 7 days if days parameter is not provided.
     """
     weatherForecast(days: Int = 7): [DailyForecast!]!
+    """
+    Activity rankings based on weather forecast.
+    Returns activities sorted by suitability (best first).
+    """
+    activityRankings(days: Int = 7): [ActivityRanking!]!
   }
 
   type Query {

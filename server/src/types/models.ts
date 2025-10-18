@@ -1,4 +1,3 @@
-
 // Domain entities
 export type City = {
   id: number;
@@ -49,6 +48,12 @@ export type DailyForecast = {
   temperatureMin: number;
   precipitation: number;
   weatherCode: WeatherCode;
+}
+
+// Activity domain
+export type ActivityRanking = {
+  activity: string;
+  score: number;
 }
 
 // Service interfaces
