@@ -1,29 +1,25 @@
 import express from "express";
 import { createHandler } from "graphql-http/lib/use/express";
-import { GraphQLSchema, GraphQLObjectType, GraphQLList, GraphQLNonNull, GraphQLInt } from 'graphql';
 import { ruruHTML } from "ruru/server";
-import { CityType, cities } from './types';  
+import { schema } from './schema/index.js';
+import { geoCodingService } from './services/geocode.js';
+import { GeoCodingError } from './types/models.js';
 
-const Query = new GraphQLObjectType({
-  name: 'Query',
-  fields: {
-    city: {
-      type: CityType,
-      args: {
-        id: { type: new GraphQLNonNull(GraphQLInt) }
-      },
-      resolve: (parent, args) => {
-        return cities.find(city => city.id === args.id);
+// Root resolver implementation
+const root = {
+  searchCities: async ({ query, limit }: { query: string; limit?: number }) => {
+    try {
+      return await geoCodingService.searchCities(query, limit);
+    } catch (error) {
+      if (error instanceof GeoCodingError) {
+        // Log error details but don't expose internal error messages
+        console.error('GeoCoding error:', error);
+        return [];
       }
-    },
-    cities: {
-      type: new GraphQLList(CityType),
-      resolve: () => cities
+      throw error; // Let unexpected errors be handled by GraphQL error handling
     }
   }
-});
-
-const schema = new GraphQLSchema({ query: Query });
+};
 
 const app = express();
 
@@ -31,6 +27,7 @@ app.all(
   "/graphql",
   createHandler({
     schema,
+    rootValue: root,
   })
 );
 
