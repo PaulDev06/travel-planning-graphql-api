@@ -63,7 +63,7 @@ src/
 
 **Simple Scoring Algorithm**: Activities are scored 0-100 based on temperature, precipitation, and weather conditions. Straightforward and predictable.
 
-## What I Skipped & Why
+## Omitted and Reason of Omission
 
 **Caching**: External APIs are fast enough for now. Would add Redis caching if usage increases.
 
@@ -77,7 +77,7 @@ src/
 
 **Advanced Scoring**: Used weighted scoring based on weather conditions. Could use ML for personalization later.
 
-## How I'd Improve It
+## Improvements
 
 ### Next Steps (Priority Order)
 
@@ -125,6 +125,3 @@ src/
 - **Express**: Simple, widely used
 - **Open-Meteo API**: Free weather and geocoding data
 
-## Notes
-
-Kept the implementation simple and pragmatic. Avoided over-engineering while maintaining clean code structure. The focus was on delivering working features that solve the core problem.
