@@ -1,5 +1,4 @@
 import { GeoCity, GeoCodingError, GeoCodingService } from '../types/models.js';
-import fetch from 'node-fetch';
 
 type OpenMeteoResponse = {
   results?: GeoCity[];
@@ -8,28 +7,8 @@ type OpenMeteoResponse = {
   };
 }
 
-export class OpenMeteoGeoCodingService {
+export class OpenMeteoGeoCodingService implements GeoCodingService {
   private readonly baseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
-
-  private async fetchWithRetry(url: string, retries = 2): Promise<any> {
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const response = await fetch(url, {
-          timeout: 8000, // Increased timeout
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'TravelPlanner/1.0'
-          }
-        });
-        return response;
-      } catch (error) {
-        if (attempt === retries) throw error;
-        // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-      }
-    }
-    throw new Error('All retry attempts failed');
-  }
 
   async searchCities(query: string, limit: number = 10): Promise<GeoCity[]> {
     if (!query.trim()) return [];
@@ -41,16 +20,41 @@ export class OpenMeteoGeoCodingService {
       url.searchParams.set('language', 'en');
       url.searchParams.set('format', 'json');
 
-      const response = await this.fetchWithRetry(url.toString());
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(url.toString(), {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'TravelPlanner/1.0'
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new GeoCodingError(
+          `Geocoding API returned ${response.status}: ${response.statusText}`
+        );
+      }
+
       const data = await response.json() as OpenMeteoResponse;
+      
+      if (data.error) {
+        throw new GeoCodingError(`API error: ${data.error.message}`);
+      }
+      
       return data.results || [];
 
     } catch (error) {
       if (error instanceof GeoCodingError) {
         throw error;
       }
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new GeoCodingError(
-        'Failed to fetch cities from OpenMeteo API',
+        `Failed to fetch cities: ${errorMessage}`,
         error
       );
     }
