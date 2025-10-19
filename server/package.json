@@ -7,9 +7,17 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "test:once": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
-  "keywords": ["graphql", "travel", "weather", "api"],
+  "keywords": [
+    "graphql",
+    "travel",
+    "weather",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -21,7 +29,11 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.8.1",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "supertest": "^7.1.4",
     "tsx": "^4.19.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }
