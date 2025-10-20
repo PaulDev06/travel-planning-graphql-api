@@ -40,6 +40,7 @@ query {
       score
     }
   }
+}
 ```
 
 ## Testing
