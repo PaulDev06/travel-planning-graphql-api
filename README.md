@@ -28,12 +28,18 @@ query {
   searchCities(query: "London", limit: 5) {
     name
     country
-    activityRankings(days: 7) {
+    weatherForecast(days: 3) {
+      date
+      temperatureMax
+      temperatureMin
+      precipitation
+      weatherCode
+    }
+    activityRankings(days: 3) {
       activity
       score
     }
   }
-}
 ```
 
 ## Testing
