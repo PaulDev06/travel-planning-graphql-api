@@ -15,6 +15,7 @@ A GraphQL API that helps users plan trips by providing city search, weather fore
 ## Quick Start
 
 ```bash
+cd server
 npm install
 npm run dev
 ```
@@ -22,7 +23,6 @@ npm run dev
 Visit `http://localhost:4000` for the GraphiQL interface.
 
 ### Example Query
-
 ```graphql
 query {
   searchCities(query: "London", limit: 5) {
@@ -36,10 +36,50 @@ query {
 }
 ```
 
+## Testing
+
+The project includes comprehensive unit and integration tests.
+
+### Running Tests
+```bash
+npm test              # Run tests in watch mode
+npm run test:once     # Run tests once
+npm run test:coverage # Generate coverage report
+```
+
+### Test Structure
+```
+tests/
+├── unit/
+│   ├── activity.test.ts   # Activity ranking logic
+│   ├── weather.test.ts    # Weather service with mocks
+│   └── geocode.test.ts    # Geocoding service with mocks
+└── integration/
+    └── api.integration.test.ts  # End-to-end GraphQL API tests
+```
+
+### Test Coverage
+
+- **Unit Tests**: Test individual services with mocked dependencies
+  - Activity scoring algorithm (various weather conditions)
+  - Weather service validation and error handling
+  - Geocoding service API integration
+
+- **Integration Tests**: Test complete request/response flow
+  - GraphQL query execution
+  - Nested resolvers (weatherForecast, activityRankings)
+  - Error handling and edge cases
+  - Query variables support
+
+### Testing Tools
+
+- **Vitest**: Fast, modern test runner
+- **Supertest**: HTTP assertions for API testing
+- **Mocking**: External API calls mocked to prevent network dependencies
+
 ## Architecture Overview
 
 ### Structure
-
 ```
 src/
 ├── services/
@@ -50,6 +90,7 @@ src/
 │   └── index.ts          # GraphQL schema
 ├── types/
 │   └── models.ts         # Type definitions
+├── resolvers.ts          # GraphQL resolvers
 └── index.ts              # Server setup
 ```
 
@@ -63,13 +104,11 @@ src/
 
 **Simple Scoring Algorithm**: Activities are scored 0-100 based on temperature, precipitation, and weather conditions. Straightforward and predictable.
 
-## Omitted and Reason of Omission
+## Omissions & Trade-offs
 
 **Caching**: External APIs are fast enough for now. Would add Redis caching if usage increases.
 
 **Authentication**: Not needed for this use case. Would add JWT auth if storing user data.
-
-**Tests**: Focused on working implementation first. Would add unit tests for activity scoring logic next.
 
 **Rate Limiting**: Relying on external API limits. Would add express-rate-limit for production.
 
@@ -77,7 +116,7 @@ src/
 
 **Advanced Scoring**: Used weighted scoring based on weather conditions. Could use ML for personalization later.
 
-## Improvements
+## Future Improvements
 
 ### Next Steps (Priority Order)
 
@@ -86,10 +125,10 @@ src/
 - Would reduce API calls by ~95%
 - Use simple in-memory cache or Redis
 
-**2. Add Tests**
-- Unit tests for activity scoring functions
-- Mock external APIs in tests
-- Validate edge cases (extreme weather, missing data)
+**2. Expand Test Coverage**
+- Add more edge case tests
+- Test timeout scenarios
+- Add performance benchmarks
 
 **3. Better Error Handling**
 - Add retry logic for transient failures
@@ -124,4 +163,4 @@ src/
 - **GraphQL**: Flexible querying, no over-fetching
 - **Express**: Simple, widely used
 - **Open-Meteo API**: Free weather and geocoding data
-
+- **Vitest + Supertest**: Modern testing tools
