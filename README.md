@@ -113,7 +113,7 @@ src/
 
 ## Omissions & Trade-offs
 
-**Caching**: External APIs are fast enough for now. Would add Redis caching if usage increases.
+**Caching**: External APIs are fast enough for now. Would add caching  if usage increases.
 
 **Authentication**: Not needed for this use case. Would add JWT auth if storing user data.
 
